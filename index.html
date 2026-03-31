@@ -40,11 +40,18 @@
         
         #loading { text-align: center; font-size: 18px; color: var(--text-muted); margin-top: 50px; padding: 20px; background: var(--card-bg); border-radius: 8px; max-width: 300px; margin-left: auto; margin-right: auto; border: 1px solid var(--border-color); }
         
-        /* บังคับ 5 คอลัมน์ */
-        .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; max-width: 1400px; margin: 0 auto; }
+        /* 🚨 แก้ไขตรงนี้: ปรับให้ Responsive เรียงจำนวนคอลัมน์อัตโนมัติ 🚨 */
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
+            gap: 20px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+        }
+
         .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.8); border-color: #555; }
-        .card-img-container { width: 100%; height: 200px; background-color: var(--card-img-bg); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); }
+        .card-img-container { width: 100%; height: 220px; background-color: var(--card-img-bg); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border-color); }
         .card img { width: 100%; height: 100%; object-fit: contain; padding: 10px; box-sizing: border-box; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
         .card-body { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
         
@@ -53,19 +60,19 @@
         .badge-game { background-color: rgba(33, 150, 243, 0.2); color: #90caf9; border: 1px solid rgba(33, 150, 243, 0.4); }
         .badge-type { background-color: rgba(255, 152, 0, 0.2); color: #ffb74d; border: 1px solid rgba(255, 152, 0, 0.4); }
 
-        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 15px; color: var(--primary-color); line-height: 1.4; display: block; }
-        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 15px; color: var(--primary-color); line-height: 1.4; display: block; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
         .info-label { color: var(--text-muted); }
         .info-value { font-weight: 500; color: var(--text-main); }
         .divider { height: 1px; background-color: var(--border-color); margin: 12px 0; }
         
-        .pl-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; background: var(--card-img-bg); padding: 10px; border-radius: 8px; border: 1px solid #2a2a2a; }
-        .pl-label { font-weight: 600; color: var(--text-main); font-size: 12px; }
-        .pl-value { font-size: 16px; font-weight: 600; text-align: right; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .pl-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; background: var(--card-img-bg); padding: 12px; border-radius: 8px; border: 1px solid #2a2a2a; }
+        .pl-label { font-weight: 600; color: var(--text-main); font-size: 13px; }
+        .pl-value { font-size: 18px; font-weight: 600; text-align: right; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
         .pl-value.profit { color: var(--profit-color); }
         .pl-value.loss { color: var(--loss-color); }
         .pl-value.neutral { color: var(--text-muted); }
-        .percent { font-size: 10px; display: block; margin-top: 2px; }
+        .percent { font-size: 11px; display: block; margin-top: 2px; }
         
         .error-msg { color: var(--loss-color); text-align: center; padding: 20px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 8px; grid-column: 1 / -1; }
     </style>
@@ -73,7 +80,7 @@
 <body>
 
     <div class="header">
-        <h1>📊 TCG Portfolio Tracker</h1>
+        <h1>📊 TCG Portfolio TomS Tanawat </h1>
     </div>
 
     <div class="summary-container" id="summary-section" style="display: none;">
@@ -127,18 +134,15 @@
             const table = response.table;
             const colCount = table.cols.length;
             
-            // ฟังก์ชันดึงค่า Format แบบ String
             const getVal = (row, idx) => {
                 if (!row.c || !row.c[idx]) return '-';
                 return row.c[idx].f !== undefined ? row.c[idx].f : (row.c[idx].v !== null ? row.c[idx].v.toString() : '-');
             };
 
-            // ฟังก์ชันดึงค่าตัวเลขดิบๆ มาใช้คำนวณ (ตัดตัวอักษร ฿ และคอมม่าออก)
             const getRawNum = (row, idx) => {
                 if (!row.c || !row.c[idx] || row.c[idx].v === null) return 0;
                 let val = row.c[idx].v;
                 if (typeof val === 'number') return val;
-                // ลบตัวหนังสือทั้งหมดเหลือแค่ตัวเลข ทศนิยม และเครื่องหมายลบ
                 let strVal = val.toString().replace(/[^0-9.-]+/g, '');
                 return parseFloat(strVal) || 0;
             };
@@ -178,13 +182,11 @@
                 if (game) gamesSet.add(game);
                 if (type) typesSet.add(type);
 
-                // ดึงค่า String ไว้แสดงผล
                 let purchasePrice = getVal(row, colCount - 4);
                 let currentPrice = getVal(row, colCount - 3);
                 let percentDiff = getVal(row, colCount - 2);
                 let pl = getVal(row, colCount - 1);
                 
-                // ดึงค่า Number เพียวๆ มาใช้บวกเลขทำสรุปยอด
                 let rawCost = getRawNum(row, colCount - 4);
                 let rawValue = getRawNum(row, colCount - 3);
                 let rawPL = getRawNum(row, colCount - 1);
@@ -211,18 +213,17 @@
                 allCardsData.push({
                     imgSrc, itemName, game, type, purchasePrice, currentPrice, 
                     percentDiff, plStr, plClass, plSymbol,
-                    rawCost, rawValue, rawPL // เก็บตัวเลขดิบไว้ทำคำนวณ
+                    rawCost, rawValue, rawPL 
                 });
             }
 
-            // แสดงผล Filter และ Summary Box
             populateSelect('gameFilter', gamesSet);
             populateSelect('typeFilter', typesSet);
             document.getElementById('filter-section').style.display = 'flex';
             document.getElementById('summary-section').style.display = 'flex';
 
             renderCards(allCardsData);
-            updateSummary(allCardsData); // คำนวณยอดครั้งแรก
+            updateSummary(allCardsData); 
         };
 
         function populateSelect(elementId, dataSet) {
@@ -236,7 +237,6 @@
             });
         }
 
-        // ฟังก์ชันคำนวณและอัปเดตยอดรวม
         function updateSummary(cardsData) {
             let totalCost = 0;
             let totalValue = 0;
@@ -248,7 +248,6 @@
                 totalPL += card.rawPL;
             });
 
-            // ฟังก์ชันช่วย Format ตัวเลขให้มีคอมม่าและทศนิยม 2 ตำแหน่ง
             const formatMoney = (num) => '฿' + num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             document.getElementById('sum-cost').textContent = formatMoney(totalCost);
@@ -326,17 +325,13 @@
             const selectedGame = document.getElementById('gameFilter').value;
             const selectedType = document.getElementById('typeFilter').value;
 
-            // กรองข้อมูลเฉพาะที่ตรงกับ Filter
             const filteredCards = allCardsData.filter(card => {
                 const matchGame = (selectedGame === 'all' || card.game === selectedGame);
                 const matchType = (selectedType === 'all' || card.type === selectedType);
                 return matchGame && matchType;
             });
 
-            // วาดการ์ดใหม่
             renderCards(filteredCards);
-            
-            // **อัปเดตยอดสรุปตามที่ถูกกรอง**
             updateSummary(filteredCards);
         }
 
