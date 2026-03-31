@@ -2,8 +2,19 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCG Portfolio Tracker - Dark Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TCG Portfolio Tracker</title>
+    
+    <meta name="theme-color" content="#1e1e1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TCG Tracker">
+    
+    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512">
+    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192">
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512","sizes":"512x512","type":"image/png"}]}'>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -18,7 +29,8 @@
             --loss-color: #ff5252;
         }
 
-        body { font-family: 'Kanit', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-main); }
+        /* ป้องกันการคลุมดำข้อความและปิดฟีเจอร์เด้งๆ ของเบราว์เซอร์ให้เหมือนแอป */
+        body { font-family: 'Kanit', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-main); -webkit-user-select: none; user-select: none; overscroll-behavior-y: none; }
         
         .header { text-align: center; margin-bottom: 20px; padding: 20px; background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid var(--border-color); }
         .header h1 { color: var(--primary-color); font-size: 28px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
@@ -40,14 +52,7 @@
         
         #loading { text-align: center; font-size: 18px; color: var(--text-muted); margin-top: 50px; padding: 20px; background: var(--card-bg); border-radius: 8px; max-width: 300px; margin-left: auto; margin-right: auto; border: 1px solid var(--border-color); }
         
-        /* 🚨 แก้ไขตรงนี้: ปรับให้ Responsive เรียงจำนวนคอลัมน์อัตโนมัติ 🚨 */
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
-            gap: 20px; 
-            max-width: 1400px; 
-            margin: 0 auto; 
-        }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; padding-bottom: 30px; }
 
         .card { background-color: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.8); border-color: #555; }
@@ -80,7 +85,7 @@
 <body>
 
     <div class="header">
-        <h1>📊 TCG Portfolio TomS Tanawat </h1>
+        <h1>📊 TCG Portfolio TomS Tanawat</h1>
     </div>
 
     <div class="summary-container" id="summary-section" style="display: none;">
