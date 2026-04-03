@@ -11,10 +11,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TCG Tracker">
     
-    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=5">
-    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=5">
+    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=6">
+    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=6">
     
-    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=5","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=5","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=6","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=6","sizes":"512x512","type":"image/png"}]}'>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -155,18 +155,23 @@
             };
 
             let startRow = 0;
-            if (table.rows.length > 0 && getVal(table.rows[0], 1).toLowerCase().includes('item')) {
+            if (table.rows.length > 0 && getVal(table.rows[0], 2).toLowerCase().includes('item')) {
                 startRow = 1;
             }
 
+            // 🚨 ค้นหาคอลัมน์อัตโนมัติ 🚨
+            let statusIdx = -1, imageIdx = -1, itemIdx = -1;
             let gameIdx = -1, typeIdx = -1, yearIdx = -1;
             let costIdx = -1, currentPriceIdx = -1, percentIdx = -1, plIdx = -1;
             
             for (let j = 0; j < colCount; j++) {
-                let headerText = table.cols[j].label || (startRow === 1 ? getVal(table.rows[0], j) : '');
+                let headerText = table.cols[j].label || (table.rows.length > 0 ? getVal(table.rows[0], j) : '');
                 headerText = headerText.toString().toLowerCase().trim();
                 
-                if (headerText === 'game' || headerText === 'เกม') gameIdx = j;
+                if (headerText === 'status' || headerText === 'สถานะ') statusIdx = j;
+                else if (headerText === 'image id' || headerText === 'รูป') imageIdx = j;
+                else if (headerText === 'item' || headerText === 'ชื่อการ์ด') itemIdx = j;
+                else if (headerText === 'game' || headerText === 'เกม') gameIdx = j;
                 else if (headerText === 'type' || headerText === 'grade') typeIdx = j;
                 else if (headerText.includes('year') || headerText.includes('ปี')) yearIdx = j;
                 else if (headerText.includes('purchase') || headerText.includes('ต้นทุน') || headerText.includes('cost')) costIdx = j;
@@ -175,6 +180,10 @@
                 else if (headerText.includes('p&l') || headerText.includes('กำไร')) plIdx = j;
             }
 
+            // ถ้าหาไม่เจอ ให้ยึดตามโครงสร้างปกติที่คุณส่งภาพมา
+            if (statusIdx === -1) statusIdx = 0;
+            if (imageIdx === -1) imageIdx = 1;
+            if (itemIdx === -1) itemIdx = 2;
             if (costIdx === -1) costIdx = colCount - 4;
             if (currentPriceIdx === -1) currentPriceIdx = colCount - 3;
             if (percentIdx === -1) percentIdx = colCount - 2;
@@ -185,8 +194,14 @@
 
             for (let i = startRow; i < table.rows.length; i++) {
                 const row = table.rows[i];
-                const imageId = getVal(row, 0).trim();
-                let itemName = getVal(row, 1).trim();
+                
+                // 🚨 ตรวจสอบ Status ถ้าเป็น inactive ให้ข้ามไปเลย ไม่เอามาคิดคำนวณ 🚨
+                let statusVal = getVal(row, statusIdx).trim().toLowerCase();
+                if (statusVal === 'inactive') continue;
+
+                const imageId = getVal(row, imageIdx).trim();
+                let itemName = getVal(row, itemIdx).trim();
+                
                 if (!itemName || itemName === '-') continue;
 
                 itemName = itemName.replace(/[ก-๙]+/g, '').trim();
@@ -198,7 +213,6 @@
                 if (game === '-') game = '';
                 if (type === '-') type = '';
                 
-                // ดึงเฉพาะปี ค.ศ. (ตัวเลข 4 หลัก) ออกมาจากข้อความ
                 let yearNum = 9999; 
                 let yearMatch = yearStr.match(/\d{4}/);
                 if (yearMatch) {
@@ -246,37 +260,30 @@
                 });
             }
 
-            // 🚨 ลอจิกการจัดเรียง (Sorting) ใหม่ 🚨
             allCardsData.sort((a, b) => {
-                // 1. เรียงเกม: Pokemon ก่อน
                 const isAPokemon = a.game.toLowerCase().includes('pokemon');
                 const isBPokemon = b.game.toLowerCase().includes('pokemon');
                 if (isAPokemon && !isBPokemon) return -1;
                 if (!isAPokemon && isBPokemon) return 1;
                 
-                // ถ้าเกมไม่ใช่ Pokemon ทั้งคู่ ให้เรียงตามชื่อเกม (A-Z)
                 if (a.game !== b.game) {
                     return a.game.localeCompare(b.game);
                 }
 
-                // 2. ภายในเกมเดียวกัน เรียง Type: PSA ก่อน
                 const isAPSA = a.type.toLowerCase().includes('psa');
                 const isBPSA = b.type.toLowerCase().includes('psa');
                 
                 if (isAPSA && !isBPSA) return -1;
                 if (!isAPSA && isBPSA) return 1;
                 
-                // ถ้า Type ไม่ใช่ PSA ทั้งคู่ ให้เรียงตาม Type ปกติ
                 if (a.type !== b.type) {
                      return a.type.localeCompare(b.type);
                 }
 
-                // 3. ภายใน Type เดียวกัน เรียงปี ค.ศ. จากน้อยไปมาก
                 if (a.yearNum !== b.yearNum) {
                     return a.yearNum - b.yearNum;
                 }
 
-                // 4. ถ้าทุกอย่างเท่ากันหมด (ปีเดียวกัน) ให้เรียงตามชื่อการ์ด
                 return a.itemName.localeCompare(b.itemName);
             });
 
@@ -353,7 +360,6 @@
                     badgesHtml += '<div class="badges">';
                     if (card.game) badgesHtml += `<span class="badge badge-game">${card.game}</span>`;
                     if (card.type) badgesHtml += `<span class="badge badge-type">${card.type}</span>`;
-                    // ใช้ yearStr ที่ดึงมาจาก Sheet แบบดิบๆ เผื่อมีคำอื่นปน
                     if (card.yearStr) badgesHtml += `<span class="badge badge-year">${card.yearStr}</span>`;
                     badgesHtml += '</div>';
                 }
