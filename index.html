@@ -11,10 +11,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TCG Tracker">
     
-    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=7">
-    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=7">
+    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=8">
+    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=8">
     
-    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=7","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=7","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=8","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=8","sizes":"512x512","type":"image/png"}]}'>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -175,7 +175,6 @@
                 else if (headerText.includes('year') || headerText.includes('ปี')) yearIdx = j;
                 else if (headerText.includes('purchase') || headerText.includes('ต้นทุน') || headerText.includes('cost')) costIdx = j;
                 else if (headerText.includes('current') || headerText.includes('ราคาตลาด') || headerText.includes('selling')) currentPriceIdx = j;
-                // ตัดการค้นหาคอลัมน์ % ออกไปเลย เราจะคำนวณเอง
                 else if (headerText.includes('p&l') || headerText.includes('กำไร')) plIdx = j;
             }
 
@@ -218,34 +217,27 @@
                 if (game) gamesSet.add(game);
                 if (type) typesSet.add(type);
 
-                let purchasePrice = getVal(row, costIdx);
-                let currentPrice = getVal(row, currentPriceIdx);
-                let pl = getVal(row, plIdx);
-                
+                // ดึงเฉพาะตัวเลขดิบๆ จาก Sheet มาใช้คำนวณใหม่ 100%
                 let rawCost = getRawNum(row, costIdx);
                 let rawValue = getRawNum(row, currentPriceIdx);
                 let rawPL = getRawNum(row, plIdx);
 
-                // 🚨 คำนวณ % ใหม่เองสดๆ เลย 🚨
+                // 🚨 สร้าง Format ตัวเลขใหม่ทั้งหมดในระบบ (ลบปัญหาเรื่องวงเล็บบัญชีจาก Sheet)
+                let purchasePrice = '฿' + rawCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                let currentPrice = '฿' + rawValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                // คำนวณ P&L
+                let plStr = '฿' + Math.abs(rawPL).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                // คำนวณเปอร์เซ็นต์
                 let calculatedPercent = 0;
                 if (rawCost > 0) {
                     calculatedPercent = ((rawValue - rawCost) / rawCost) * 100;
                 }
-                // จัด format % ให้สวยๆ เช่น 10.50%
-                let percentDiff = Math.abs(calculatedPercent).toFixed(2) + '%';
-
-
-                if (!purchasePrice.includes('฿') && purchasePrice !== '-') purchasePrice = '฿' + purchasePrice;
-                if (!currentPrice.includes('฿') && currentPrice !== '-') currentPrice = '฿' + currentPrice;
-                if (!pl.includes('฿') && pl !== '-') {
-                    if (pl.startsWith('(')) pl = '(฿' + pl.substring(1);
-                    else pl = '฿' + pl;
-                }
-
-                let imgSrc = 'https://via.placeholder.com/280x280/252525/9e9e9e?text=No+Image';
-                if (imageId.length > 5) {
-                    imgSrc = `https://drive.google.com/thumbnail?id=${imageId}&sz=w800`;
-                }
+                
+                // ใส่เครื่องหมาย + หรือ - นำหน้า %
+                let pSign = calculatedPercent > 0 ? '+' : (calculatedPercent < 0 ? '-' : '');
+                let percentDiff = pSign + Math.abs(calculatedPercent).toFixed(2) + '%';
 
                 let plClass = 'neutral';
                 let plSymbol = '';
@@ -255,12 +247,17 @@
                     plSymbol = '+';
                 } else if (rawPL < 0) {
                     plClass = 'loss';
+                    plSymbol = '-';
+                }
+
+                let imgSrc = 'https://via.placeholder.com/280x280/252525/9e9e9e?text=No+Image';
+                if (imageId.length > 5) {
+                    imgSrc = `https://drive.google.com/thumbnail?id=${imageId}&sz=w800`;
                 }
 
                 allCardsData.push({
                     imgSrc, itemName, game, type, yearStr, yearNum, purchasePrice, currentPrice, 
-                    percentDiff, // ส่งค่า % ที่คำนวณเองไปแสดงผล
-                    plStr: pl, plClass, plSymbol,
+                    percentDiff, plStr, plClass, plSymbol,
                     rawCost, rawValue, rawPL 
                 });
             }
@@ -323,7 +320,8 @@
                 totalPL += card.rawPL;
             });
 
-            const formatMoney = (num) => '฿' + num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            // ปรับ Format ของยอดสรุป
+            const formatMoney = (num) => '฿' + Math.abs(num).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             document.getElementById('sum-cost').textContent = formatMoney(totalCost);
             document.getElementById('sum-value').textContent = formatMoney(totalValue);
@@ -332,17 +330,19 @@
             
             let totalPercent = 0;
             if (totalCost > 0) {
-                totalPercent = ((totalPL / totalCost) * 100).toFixed(2);
+                totalPercent = (totalPL / totalCost) * 100;
             }
 
-            let plFormatted = formatMoney(Math.abs(totalPL));
-            let percentHtml = `<span class="summary-percent">(${Math.abs(totalPercent)}%)</span>`;
+            let plFormatted = formatMoney(totalPL);
+            let sumPercentSign = totalPercent > 0 ? '+' : (totalPercent < 0 ? '-' : '');
+            // ลบวงเล็บออก และใส่เครื่องหมาย +/- แทน
+            let percentHtml = `<span class="summary-percent">${sumPercentSign}${Math.abs(totalPercent).toFixed(2)}%</span>`;
 
             if (totalPL > 0) {
-                sumPlEl.innerHTML = '+' + plFormatted + percentHtml;
+                sumPlEl.innerHTML = '+' + plFormatted + ' ' + percentHtml;
                 sumPlEl.className = 'summary-value profit';
             } else if (totalPL < 0) {
-                sumPlEl.innerHTML = '-' + plFormatted + percentHtml;
+                sumPlEl.innerHTML = '-' + plFormatted + ' ' + percentHtml;
                 sumPlEl.className = 'summary-value loss';
             } else {
                 sumPlEl.innerHTML = plFormatted;
@@ -387,7 +387,7 @@
                                 <span class="pl-label">กำไร/ขาดทุน</span>
                                 <div style="text-align: right;">
                                     <span class="pl-value ${card.plClass}">${card.plSymbol}${card.plStr}</span>
-                                    <span class="percent ${card.plClass}">(${card.percentDiff})</span>
+                                    <span class="percent ${card.plClass}">${card.percentDiff}</span>
                                 </div>
                             </div>
                         </div>
