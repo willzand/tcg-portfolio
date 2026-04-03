@@ -11,10 +11,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TCG Tracker">
     
-    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=6">
-    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=6">
+    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=7">
+    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=7">
     
-    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=6","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=6","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json,{"name":"TCG Portfolio Tracker","short_name":"TCG Tracker","display":"standalone","background_color":"#121212","theme_color":"#1e1e1e","icons":[{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w192&v=7","sizes":"192x192","type":"image/png"},{"src":"https://drive.google.com/thumbnail?id=1LiyFh4ZJlxcIFu1udFBdWG4SrsJRlJi9&sz=w512&v=7","sizes":"512x512","type":"image/png"}]}'>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -159,10 +159,9 @@
                 startRow = 1;
             }
 
-            // 🚨 ค้นหาคอลัมน์อัตโนมัติ 🚨
             let statusIdx = -1, imageIdx = -1, itemIdx = -1;
             let gameIdx = -1, typeIdx = -1, yearIdx = -1;
-            let costIdx = -1, currentPriceIdx = -1, percentIdx = -1, plIdx = -1;
+            let costIdx = -1, currentPriceIdx = -1, plIdx = -1;
             
             for (let j = 0; j < colCount; j++) {
                 let headerText = table.cols[j].label || (table.rows.length > 0 ? getVal(table.rows[0], j) : '');
@@ -176,17 +175,15 @@
                 else if (headerText.includes('year') || headerText.includes('ปี')) yearIdx = j;
                 else if (headerText.includes('purchase') || headerText.includes('ต้นทุน') || headerText.includes('cost')) costIdx = j;
                 else if (headerText.includes('current') || headerText.includes('ราคาตลาด') || headerText.includes('selling')) currentPriceIdx = j;
-                else if (headerText === '%' || headerText.includes('percent')) percentIdx = j;
+                // ตัดการค้นหาคอลัมน์ % ออกไปเลย เราจะคำนวณเอง
                 else if (headerText.includes('p&l') || headerText.includes('กำไร')) plIdx = j;
             }
 
-            // ถ้าหาไม่เจอ ให้ยึดตามโครงสร้างปกติที่คุณส่งภาพมา
             if (statusIdx === -1) statusIdx = 0;
             if (imageIdx === -1) imageIdx = 1;
             if (itemIdx === -1) itemIdx = 2;
             if (costIdx === -1) costIdx = colCount - 4;
             if (currentPriceIdx === -1) currentPriceIdx = colCount - 3;
-            if (percentIdx === -1) percentIdx = colCount - 2;
             if (plIdx === -1) plIdx = colCount - 1;
 
             let gamesSet = new Set();
@@ -195,7 +192,6 @@
             for (let i = startRow; i < table.rows.length; i++) {
                 const row = table.rows[i];
                 
-                // 🚨 ตรวจสอบ Status ถ้าเป็น inactive ให้ข้ามไปเลย ไม่เอามาคิดคำนวณ 🚨
                 let statusVal = getVal(row, statusIdx).trim().toLowerCase();
                 if (statusVal === 'inactive') continue;
 
@@ -224,12 +220,20 @@
 
                 let purchasePrice = getVal(row, costIdx);
                 let currentPrice = getVal(row, currentPriceIdx);
-                let percentDiff = getVal(row, percentIdx);
                 let pl = getVal(row, plIdx);
                 
                 let rawCost = getRawNum(row, costIdx);
                 let rawValue = getRawNum(row, currentPriceIdx);
                 let rawPL = getRawNum(row, plIdx);
+
+                // 🚨 คำนวณ % ใหม่เองสดๆ เลย 🚨
+                let calculatedPercent = 0;
+                if (rawCost > 0) {
+                    calculatedPercent = ((rawValue - rawCost) / rawCost) * 100;
+                }
+                // จัด format % ให้สวยๆ เช่น 10.50%
+                let percentDiff = Math.abs(calculatedPercent).toFixed(2) + '%';
+
 
                 if (!purchasePrice.includes('฿') && purchasePrice !== '-') purchasePrice = '฿' + purchasePrice;
                 if (!currentPrice.includes('฿') && currentPrice !== '-') currentPrice = '฿' + currentPrice;
@@ -255,7 +259,8 @@
 
                 allCardsData.push({
                     imgSrc, itemName, game, type, yearStr, yearNum, purchasePrice, currentPrice, 
-                    percentDiff, plStr: pl, plClass, plSymbol,
+                    percentDiff, // ส่งค่า % ที่คำนวณเองไปแสดงผล
+                    plStr: pl, plClass, plSymbol,
                     rawCost, rawValue, rawPL 
                 });
             }
